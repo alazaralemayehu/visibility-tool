@@ -14,7 +14,7 @@ class NmapScanner:
         # for host_to_be_scanned in self.links:
         host_to_be_scanned = self.link
         ports = self.perform_TCP_port_scan(host_to_be_scanned)
-        scan_result['port'] = ports
+        scan_result['ports'] = ports
         # os_scan = self.perform_OS_scan(host_to_be_scanned)
         # scan_result['os'] = os_scan
 
@@ -30,7 +30,7 @@ class NmapScanner:
                 for port in ports:
                     openPortsState = self.nm[host][proto][port]['state']
                     openPortServiceName = self.nm[host][proto][port]['name']
-                    results[port] = [openPortsState, openPortServiceName]
+                    results[port] = {'status' :[openPortsState, openPortServiceName]}
         return (results)
     
     def perform_OS_scan(self, host_to_scan):
@@ -43,5 +43,4 @@ class NmapScanner:
             if (len(results[0]) > 0):
                 return (results[0][0]['name'])
 
-        # print(type(results[0][0]))
         return results

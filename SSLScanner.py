@@ -4,13 +4,17 @@ import re
 class SSLScanner:
     def __init__(self) -> None:
         self.link = None
+        self.port = 443
 
     def set_link(self, link):
         self.link = link
 
+    def set_port(self, port):
+        self.port = port
+
     def perform_scans(self):
         # for link in self.links:
-        sub_process_result = subprocess.check_output(["sslscan", self.link],  universal_newlines=True)
+        sub_process_result = subprocess.check_output(["sslscan",  self.link +":"+str(self.port)],  universal_newlines=True)
         escaped_result = self.ansi_code_remover(sub_process_result)
         result = self.extract_scanner_report(escaped_result.split("\n"))
         return (result)
@@ -37,9 +41,11 @@ class SSLScanner:
 
             property = protocol[0]
             value = " ".join(protocol[1:])
+            if (property not in ["Preferred", "Accepted"]):
+                return []
+
             if (property not in supported_cipher.keys()):
                 supported_cipher[property] = [value]
-                print(supported_cipher)
 
             else:
                 supported_cipher[property].append(value)
