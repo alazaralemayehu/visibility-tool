@@ -84,5 +84,4 @@ class SSLScanner:
 
 
 ssl = SSLScanner()
-ssl.set_link("electrification.dev.pki.dps.kone.com")
 ssl.perform_scan()

@@ -49,6 +49,5 @@ class NmapScanner:
 def main():
 
     ns = NmapScanner()
-    ns.set_link("electrification.dev.pki.dps.kone.com")
     ns.perform_scans()
 main()
