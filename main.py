@@ -1,105 +1,46 @@
-from doctest import OutputChecker
-import string
 import json
 import time
 import subprocess
 from NmapScanner import NmapScanner
-
 from SSLScanner import SSLScanner
 
 def main(event=None, context=None):
     linksFile = open("links.txt", "r")
-    listOfHosts = []
+    list_of_hosts = []
+    
+    file_name = "result" + time.strftime("%Y%m%d-%H%M%S") + ".json"
+    output_file = open(file_name, "a")
+    output_dictionary = {}
 
     for line in linksFile.readlines():
-        listOfHosts.append(line.strip())
+        list_of_hosts.append(line.strip())
 
     print(subprocess.check_output([ "whoami"]))
+
     output_dictionary ={}
     ssl_scanner = SSLScanner()
     nmap_scanner = NmapScanner()
 
-    for host_to_be_scanned in listOfHosts:
-        scanResult: dict = {}
+    for host_to_be_scanned in list_of_hosts:
+        scan_results = {}
+        
+        print(host_to_be_scanned)
+        ssl_scanner.set_link(host_to_be_scanned)
+        nmap_scanner.set_link(host_to_be_scanned)
+
+        nmap_result = nmap_scanner.perform_scans()
+        scan_results['nmap_results'] = nmap_result
+
+        ssl_result = ssl_scanner.perform_scans()
+        scan_results['ssl_results'] = ssl_result
+
+        output_dictionary[host_to_be_scanned] = scan_results
 
 
-    jsonResult = json.dumps(outputDictionary, indent=4)
-    json.dump(outputDictionary, outPutFile)
+    jsonResult = json.dumps(output_dictionary, indent=4)
+    json.dump(output_dictionary, output_file)
 
     print(jsonResult)
-
-    outPutFile.close()
-
-
-def performOSDetection(host_to_scan: string, nm: nmap.PortScanner):
-    scanned = nm.scan(host_to_scan, arguments="-O")
-    hosts = nm.all_hosts()
-    results = []
-    # print(scanned)
-    for host in hosts:
-        results.append(scanned['scan'][host]['osmatch'])
-    if (len(results) > 0):
-        if (len(results[0][0]> 0)):
-            return (results[0][0]['name'])
-
-    # print(type(results[0][0]))
-    return results
-
-def detectSSLVersion(host_to_scan: string, nm: nmap.PortScanner):
-    scanned = nm.scan(host_to_scan, arguments="-sV --script ssl-enum-ciphers -p 443")
-    # print(scanned)
-    host = nm.all_hosts()[0]
-    result:dict = scanned['scan'][host]['tcp']
-    if (443 not in result.keys()):
-        return result
-    result = result[443]
-    if ('script' not in result.keys()):
-        return result
-
-    result = result[443]['script']['ssl-enum-ciphers']
-    # print(result, type(result))
-
-    return result
-    # result:dict = scanned['scan'][host]['tcp'][443]['script']['ssl-enum-ciphers']
-
-    # return result
-
-def performTCPPortScan (host_to_scan: string, nm: nmap.PortScanner):
-    nm.scan(host_to_scan, '1-1024','-v -sS -sV')
-    hosts = nm.all_hosts()
-    results = {}
-    keyToRemove = ['reason','product','version', 'extrainfo','conf','cpe']
-
-    for host in hosts:
-        for proto in nm[host].all_protocols():
-            ports = nm[host][proto].keys()
-            for port in ports:
-                openPortsState = nm[host][proto][port]['state']
-                openPortServiceName = nm[host][proto][port]['name']
-
-                results[port] = [openPortsState, openPortServiceName]
-
-                # result = str(port) + " : "+ str(nm[host][proto][port])
-
-                # results.append(result)
-                # print(port , " info ", nm[host][proto][port])
-    # for i in results:
-    #     print(i)
-    # print(results)
-    return (results)
-
-def performComprehensiveScan(host_to_scan: string, nm: nmap.PortScanner):
-    nm.scan(host_to_scan, arguments='-v -A')
-    results = []
-    hosts = nm.all_hosts()
-    for host in hosts:
-        for proto in nm[host].all_protocols():
-            ports = nm[host][proto].keys()
-            for port in ports:
-                result = str(port) + " : "+ str(nm[host][proto][port])
-                results.append(result)
-                # print(port , " info ", nm[host][proto][port])
-    print(result)
-    return (results)
+    output_file.close()
 
 main()
