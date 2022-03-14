@@ -17,16 +17,16 @@ def main(event=None, context=None):
 
     print(subprocess.check_output([ "whoami"]))
     output_dictionary = scan_hosts(list_of_hosts)
+    print(output_dictionary)
 
     jsonResult = json.dumps(output_dictionary, indent=4)
-    json.dump(output_dictionary, output_file)
-
-    print(jsonResult)
+    # json.dump(output_dictionary, output_file)
+    output_file.write(jsonResult)
     output_file.close()
 
 def scan_hosts(list_of_hosts):
     
-    output_dictionary ={}
+    scan_output = []
     ssl_scanner = SSLScanner()
     nmap_scanner = NmapScanner()
 
@@ -43,8 +43,15 @@ def scan_hosts(list_of_hosts):
             ssl_scanner.set_port(port)
             ssl_result = ssl_scanner.perform_scans()
             scan_results['ports'][port] = ssl_result
+        print(" scan results ")
+        print (scan_results)
 
-        output_dictionary[host_to_be_scanned] = scan_results
-
-    return output_dictionary
+        output_dictionary = {"id": host_to_be_scanned}
+        output_dictionary.update(scan_results)
+        print(" output dictionary ")
+        print(output_dictionary)
+        scan_output.append(output_dictionary)
+    print(" scan output ")
+    print(scan_output)
+    return scan_output
 main()
