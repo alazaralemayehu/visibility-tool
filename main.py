@@ -33,6 +33,7 @@ def scan_hosts(list_of_hosts):
     nmap_scanner = NmapScanner()
 
     for host_to_be_scanned in list_of_hosts:
+        print("scanning " + host_to_be_scanned)
         scan_results = {}
 
         ssl_scanner.set_link(host_to_be_scanned)
