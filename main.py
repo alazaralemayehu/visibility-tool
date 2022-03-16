@@ -8,6 +8,7 @@ def main(event=None, context=None):
     linksFile = open("links.txt", "r")
     list_of_hosts = []
     
+    # output file name that saves the json output
     file_name = "result" + time.strftime("%Y%m%d-%H%M%S") + ".json"
     output_file = open(file_name, "a")
     output_dictionary = {}
@@ -16,6 +17,7 @@ def main(event=None, context=None):
         list_of_hosts.append(line.strip())
 
     print(subprocess.check_output([ "whoami"]))
+
     output_dictionary = scan_hosts(list_of_hosts)
     print(output_dictionary)
 
@@ -33,7 +35,6 @@ def scan_hosts(list_of_hosts):
     for host_to_be_scanned in list_of_hosts:
         scan_results = {}
 
-        print(host_to_be_scanned)
         ssl_scanner.set_link(host_to_be_scanned)
         nmap_scanner.set_link(host_to_be_scanned)
 
@@ -43,15 +44,9 @@ def scan_hosts(list_of_hosts):
             ssl_scanner.set_port(port)
             ssl_result = ssl_scanner.perform_scans()
             scan_results['ports'][port] = ssl_result
-        print(" scan results ")
-        print (scan_results)
 
         output_dictionary = {"id": host_to_be_scanned}
         output_dictionary.update(scan_results)
-        print(" output dictionary ")
-        print(output_dictionary)
         scan_output.append(output_dictionary)
-    print(" scan output ")
-    print(scan_output)
     return scan_output
 main()
