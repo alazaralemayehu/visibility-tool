@@ -18,7 +18,7 @@ class NmapScanner:
         return (scan_result)
 
     def perform_TCP_port_scan(self, host_to_scan):
-        self.nm.scan(host_to_scan, '1-65535','-v -sS -sV')
+        self.nm.scan(host_to_scan, '1-65535','-sV -sS -T4 -v')
         hosts = self.nm.all_hosts()
         results = {}
         for host in hosts:
