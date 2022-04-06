@@ -214,17 +214,20 @@ def main():
     parser = argparse.ArgumentParser(description='Validates the resource against rules')
     parser.add_argument('--rules', help='rules file as a json', default='rules.json', dest='rules_file_name')
     parser.add_argument('--resource', help='resource file to be validated as a json', default='resource.json', dest='resource_file_name')
-
+    
     args=(parser.parse_args())
-    if (not os.path.exists(args.rules_file_name)):
-        print("Please make sure "+ args.rules_file_name +" exists")
+    rules_file_name = args.rules_file_name
+    resource_file_name = args.resource_file_name
+
+    if (not os.path.exists(rules_file_name)):
+        print("Please make sure "+ rules_file_name +" exists")
         return 
-    if (not os.path.exists(args.resource_file_name)):
-        print("Please make sure "+ args.resource_file_name + " exists")
+    if (not os.path.exists(resource_file_name)):
+        print("Please make sure "+ resource_file_name + " exists")
         return
     
     rule_manager = RuleManager()
-    rule_manager.set_rules_file("rules.json")
+    rule_manager.set_rules_file(rules_file_name)
     is_rule_structure_valid = rule_manager.validate_rule_structure()
 
     if (not is_rule_structure_valid):
@@ -233,7 +236,7 @@ def main():
     # print(rule_engine.rules)
 
     resources_manager = ResourceManager()
-    resources_manager.set_resource_files("test.json")
+    resources_manager.set_resource_files(resource_file_name)
     resources_dict_list = resources_manager.get_resource_properties()
     if (not resources_manager.is_valid_resource):
         print("Something is wrong resources files")
