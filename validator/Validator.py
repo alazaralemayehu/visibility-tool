@@ -1,6 +1,7 @@
 
 import argparse
 import json
+from deepdiff import DeepDiff
 import os
 
 # https://www.dnspython.org/examples/
@@ -10,7 +11,7 @@ class RuleManager:
         self.rules_file = None
         self.is_valid_rule = False
     
-    def set_rules_file(self, file_name):
+    def set_rules_file(self, file_name) -> None:
         self.rules_file = file_name
     
     def set_rules(self,rules):
@@ -19,18 +20,41 @@ class RuleManager:
     def get_rules(self):
         return self.rules
 
+
     def validate_rule_structure(self):
+#     {
+#     "rules" : [
+#             {
+#                 "name": "rule_name",
+#                 "port_pairs": [
+#                     [80, 3306],
+#                     [80, 5432]
+#                 ],
+#                 "open_ports": [80,443],
+#                 "enabled_ssl_version": ["TLSv1.2","TLSv1.3"]
+#             }
+#     ],
+#     "applied_rules": [
+#         {
+#                 "id": "resource_name",
+#                 "enforced_rules" : ["rulenames", "rule2"]
+#         }
+#     ]
+# }
+
+# Validate the rules json structure to follow the above example structure
+
         if (self.rules == None and self.rules_file == None):
+            # both rules file and json file read from rules file does not exist
             print("Unable to find json file or json object to validate")
             self.is_valid_rule = False
             return False
        
         elif (self.rules == None and self.rules_file != None):
-            f = open(self.rules_file, "r")
-            json_string = f.read()
-            json_objects = json.loads(json_string)
-            self.rules = json_objects
+            # rules file exists but the json does not exist
+            self.rules = Utilities.read_file(self.rules_file)
         try:
+            # Both rules file and rules json exist, choose the json file
             rules = self.rules['rules']
             rule_identifiers = [rule['name'] for rule in rules]
             applied_rules = self.rules['applied_rules']
@@ -77,12 +101,7 @@ class ResourceManager:
             return False
        
         elif (self.resources == None and self.resource_file != None):
-            f = open(self.resource_file, "r")
-            json_string = f.read()
-            json_objects = json.loads(json_string)
-            self.resources = json_objects
-
-        self.is_valid_resource = True
+            self.resources = Utilities.read_file(self.resource_file)
         for index in range(len(self.resources)):
 
             resource_id= self.extract_id(index)
@@ -97,12 +116,6 @@ class ResourceManager:
             self.aggregated_resource_list.append(aggregated_result)
 
         return self.aggregated_resource_list
-
-    def read_file(self,file_name):
-        f = open(file_name, "r")
-        json_string = f.read()
-        json_objects = json.loads(json_string)
-        self.resource_file = json_objects
 
     def extract_id(self,index):   
         return self.resources[index]["id"]
@@ -122,7 +135,7 @@ class ResourceManager:
                     enabled_ssl_version.extend(ssl_procotol["enabled"])
             
         return enabled_ssl_version      
-
+    
 class RuleEngine:
     def __init__(self) -> None:
         self.resources = None
@@ -162,14 +175,14 @@ class RuleEngine:
                             else:
                                 final_rules[key] = [rule[key], final_rules[key]]
             
-            issue = self.evalute_resource(resource, final_rules)
+            issue = self.evaluate_resource(resource, final_rules)
             if issue:
                 issues[resource['id']] = issue
         for key in issues:
             print(key + "      ", end=" ")
             print(issues[key])
 
-    def evalute_resource (self, resource, applied_rules):
+    def evaluate_resource (self, resource, applied_rules):
         if not resource: return False
 
         issues_found = []
@@ -205,7 +218,45 @@ class RuleEngine:
                 enforced_rules.extend(applied_rule['enforced_rules'])
 
         return enforced_rules
-        
+       
+class Utilities:
+    
+    def read_file(file_name):
+        f = open(file_name, "r")
+        json_string = f.read()
+        json_objects = json.loads(json_string)
+        return json_objects
+
+class JsonDifference:
+    def __init__(self) -> None:
+        self.json_object1 = {}
+        self.json_object2 = {}
+
+    def setJsons(self, json1, json2):
+        self.json_object1 = json1
+        self.json_object2 = json2
+
+    def computeDifferences(self):
+        resources_with_difference = []
+        resourceManager = ResourceManager()
+        resourceManager.set_resource(self.json_object1)
+        json1 = resourceManager.get_resource_properties()
+        resourceManager.set_resource(self.json_object2)
+        json2 = resourceManager.get_resource_properties()
+
+        number_of_resources = 0
+        number_of_differences = 0
+
+        for j1 in json1:
+            j1_key = j1['id']
+            j2 = [obj for obj in json2 if (obj['id'] == j1_key)]
+            number_of_resources +=1
+            if (len(j2) != 0):
+                diff = (DeepDiff(j1, j2[0], verbose_level=2))
+                if (len(diff) > 0):
+                    resources_with_difference.append(j1)
+
+        return resources_with_difference
 
 
 
@@ -213,12 +264,27 @@ def main():
 
     parser = argparse.ArgumentParser(description='Validates the resource against rules')
     parser.add_argument('--rules', help='rules file as a json', default='rules.json', dest='rules_file_name')
-    parser.add_argument('--resource', help='resource file to be validated as a json', default='resource.json', dest='resource_file_name')
+    parser.add_argument('--res', help='resource file to be validated as a json', default='resource.json', dest='resource_file_name')
+    parser.add_argument('--res2', help='resource file to be compared with the recent json file as a json file', default=None, dest='resource_file_name2')
     
     args=(parser.parse_args())
+
     rules_file_name = args.rules_file_name
     resource_file_name = args.resource_file_name
+    resource_file_name2 = args.resource_file_name2
 
+    rule_manager = RuleManager()
+
+    resources_manager = ResourceManager()
+
+
+    if (resource_file_name2 is not None):
+        if (not os.path.exists(resource_file_name2)):
+            print("Please make sure " + resource_file_name2 +" file exists.")
+            return
+        resources_manager.set_resource_files(resource_file_name2)
+       
+    
     if (not os.path.exists(rules_file_name)):
         print("Please make sure "+ rules_file_name +" exists")
         return 
@@ -226,22 +292,28 @@ def main():
         print("Please make sure "+ resource_file_name + " exists")
         return
     
-    rule_manager = RuleManager()
+    
     rule_manager.set_rules_file(rules_file_name)
     is_rule_structure_valid = rule_manager.validate_rule_structure()
 
     if (not is_rule_structure_valid):
         print("Something is wrong with Rule structure")
         return
-    # print(rule_engine.rules)
 
-    resources_manager = ResourceManager()
+    updated_resources = None
     resources_manager.set_resource_files(resource_file_name)
-    resources_dict_list = resources_manager.get_resource_properties()
-    if (not resources_manager.is_valid_resource):
-        print("Something is wrong resources files")
-        return 
 
+    if (resource_file_name2 is not None):
+        jsondiff = JsonDifference()
+        jsondiff.setJsons(Utilities.read_file(resource_file_name), Utilities.read_file(resource_file_name2))
+        
+        updated_resources = jsondiff.computeDifferences()
+
+    if updated_resources is None:
+        resources_dict_list = resources_manager.get_resource_properties()
+    else:
+        resources_dict_list = updated_resources
+         
     rule_engine = RuleEngine()
     rule_engine.set_resources(resources_dict_list)
     rule_engine.set_rules(rule_manager.get_rules())
