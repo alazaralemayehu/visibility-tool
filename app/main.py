@@ -1,8 +1,13 @@
 import json
+import logging
 import time
 import subprocess
+import boto3
+from botocore.exceptions import ClientError
+import os
 from NmapScanner import NmapScanner
 from SSLScanner import SSLScanner
+import boto3
 
 def main(event=None, context=None):
     links_file = open("links.txt", "r")
@@ -25,6 +30,19 @@ def main(event=None, context=None):
     # json.dump(output_dictionary, output_file)
     output_file.write(json_result)
     output_file.close()
+
+    response = upload_file(file_name, 'vulnscan-bucket')
+    print(response)
+
+def upload_file (file_name, bucket):
+
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.upload_file(file_name, bucket, file_name)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
 
 def scan_hosts(list_of_hosts):
     

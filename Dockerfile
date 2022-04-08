@@ -2,10 +2,12 @@ ARG FUNCTION_DIR="/function"
 
 FROM ubuntu:latest
 
+# Define function directory
 ARG FUNCTION_DIR
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
-#Install aws-lambda-cpp build dependencies
+
+#Install nmap, sslscan and build dependencies
 RUN apt-get update && \
     apt-get install -y \
     g++ \
@@ -24,21 +26,22 @@ RUN apt-get update && \
     apt-get build-dep openssl -y && \
     git clone https://github.com/rbsec/sslscan.git && \
     cd sslscan && \
-    make static
-
-RUN echo 'export PATH="$PATH:/function/sslscan"' >> /root/.bashrc
-# Copy function code
-COPY app/* ${FUNCTION_DIR}
-
-# Install the runtime interface client
+    make static && \
+    mv /function/sslscan/sslscan /bin/ &&\
+# Setup aws client
+    apt-get install curl; curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&\
+    unzip awscliv2.zip && rm awscliv2.zip && \
+    sudo ./aws/install
+# install python dependencies
 RUN pip3 install \
         python-nmap \
-        deepdiff
+        deepdiff \
+        boto3
+# setup aws authentication configuration 
+RUN mkdir -p /root/.aws
+COPY .aws /root/.aws
 
 
-# RUN echo "sbx_user1051:sbx_user1051" | chpasswd && adduser sbx_user1051 sudo
-USER root
-
-# ENTRYPOINT ["python3"]
+COPY app/* ${FUNCTION_DIR}
 
 CMD [ "python3", "main.py"]
