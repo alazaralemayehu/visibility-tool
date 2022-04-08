@@ -14,7 +14,7 @@ class SSLScanner:
 
     def perform_scans(self):
         # for link in self.links:
-        sub_process_result = subprocess.check_output(["sslscan",  self.link +":"+str(self.port)],  universal_newlines=True)
+        sub_process_result = subprocess.check_output(["./sslscan/sslscan",  self.link +":"+str(self.port)],  universal_newlines=True)
         escaped_result = self.ansi_code_remover(sub_process_result)
         result = self.extract_scanner_report(escaped_result.split("\n"))
         return (result)

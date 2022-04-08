@@ -5,7 +5,7 @@ from NmapScanner import NmapScanner
 from SSLScanner import SSLScanner
 
 def main(event=None, context=None):
-    linksFile = open("links.txt", "r")
+    links_file = open("links.txt", "r")
     list_of_hosts = []
     
     # output file name that saves the json output
@@ -13,7 +13,7 @@ def main(event=None, context=None):
     output_file = open(file_name, "a")
     output_dictionary = {}
 
-    for line in linksFile.readlines():
+    for line in links_file.readlines():
         list_of_hosts.append(line.strip())
 
     print(subprocess.check_output([ "whoami"]))
@@ -21,9 +21,9 @@ def main(event=None, context=None):
     output_dictionary = scan_hosts(list_of_hosts)
     print(output_dictionary)
 
-    jsonResult = json.dumps(output_dictionary, indent=4)
+    json_result = json.dumps(output_dictionary, indent=4)
     # json.dump(output_dictionary, output_file)
-    output_file.write(jsonResult)
+    output_file.write(json_result)
     output_file.close()
 
 def scan_hosts(list_of_hosts):
