@@ -36,7 +36,8 @@ RUN apt-get update && \
 RUN pip3 install \
         python-nmap \
         deepdiff \
-        boto3
+        boto3 \
+        dnspython
 # setup aws authentication configuration 
 RUN mkdir -p /root/.aws
 COPY .aws /root/.aws

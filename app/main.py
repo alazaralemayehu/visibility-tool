@@ -58,6 +58,8 @@ def scan_hosts(list_of_hosts):
         nmap_scanner.set_link(host_to_be_scanned)
 
         scan_results = nmap_scanner.perform_scans()
+        if (scan_results is None):
+            continue
 
         for port in scan_results['ports']:
             ssl_scanner.set_port(port)
