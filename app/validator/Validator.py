@@ -1,6 +1,7 @@
+import argparse
 import json
 from deepdiff import DeepDiff
-
+import os
 
 # https://www.dnspython.org/examples/
 class RuleManager: 
@@ -258,4 +259,5 @@ class JsonDifference:
                     resources_with_difference.append(j1)
 
         return resources_with_difference
+
 
