@@ -3,64 +3,55 @@ from deepdiff import DeepDiff
 import boto3
 import boto3.session
 from Validator import *
-def run_aws_lambda():
-    f = open('config.txt', 'r')
-    
-    # content of config.txt file should look like
-    # aws_acess_key_id
-    # aws_secret_access_key
-    
-    lines = f.readlines()
-    aws_access_key_id = lines[0].strip()
-    aws_secret_acces_key = lines[1].strip()
 
 
-    conn = boto3.session.Session(
-        aws_access_key_id= aws_access_key_id,
-        aws_secret_access_key= aws_secret_acces_key
-    )
 
-    s3 = conn.resource('s3')
-    # for bucket in s3.buckets.all()
-    bucket = s3.Bucket('test-vulscanner')
-    objects =list(bucket.objects.all())
-    if (len(objects)== 0):
-        return None, None
-    elif (len(objects) == 1):
-        return json.loads(objects[0].get()['Body'].read().decode('utf-8')), None
-    else:
-        objects.sort(key=lambda object: object.last_modified, reverse=True)
-        first_object_content = json.loads(objects[0].get()['Body'].read().decode('utf-8'))
-        second_object_content = json.loads(objects[1].get()['Body'].read().decode('utf-8'))
-        return first_object_content,second_object_content    
-        
 def main():
 
+    parser = argparse.ArgumentParser(description='Validates the resource against rules')
+    parser.add_argument('--rules', help='rules file as a json', default='rules.json', dest='rules_file_name')
+    parser.add_argument('--res', help='resource file to be validated as a json', default='resource.json', dest='resource_file_name')
+    parser.add_argument('--res2', help='resource file to be compared with the recent json file as a json file', default=None, dest='resource_file_name2')
+    
+    args=(parser.parse_args())
+
+    rules_file_name = args.rules_file_name
+    resource_file_name = args.resource_file_name
+    resource_file_name2 = args.resource_file_name2
+
     rule_manager = RuleManager()
+
     resources_manager = ResourceManager()
 
-    rules_file_name = 'rules.json'
-    rule_manager.set_rules_file(rules_file_name)
 
+    if (resource_file_name2 is not None):
+        if (not os.path.exists(resource_file_name2)):
+            print("Please make sure " + resource_file_name2 +" file exists.")
+            return
+        resources_manager.set_resource_files(resource_file_name2)
+       
+    
+    if (not os.path.exists(rules_file_name)):
+        print("Please make sure "+ rules_file_name +" exists")
+        return 
+    if (not os.path.exists(resource_file_name)):
+        print("Please make sure "+ resource_file_name + " exists")
+        return
+    
+    
+    rule_manager.set_rules_file(rules_file_name)
     is_rule_structure_valid = rule_manager.validate_rule_structure()
 
     if (not is_rule_structure_valid):
         print("Something is wrong with Rule structure")
         return
 
-    resource_content , resource_content_2 = run_aws_lambda()
-    
-
-    if (resource_content is None and resource_content_2 is None):
-            print("Please make sure the bucket is not empty or you have access to those files.")
-            return
-
     updated_resources = None
-    resources_manager.set_resource(resource_content)
+    resources_manager.set_resource_files(resource_file_name)
 
-    if (resource_content_2 is not None and resource_content is not None):
+    if (resource_file_name2 is not None):
         jsondiff = JsonDifference()
-        jsondiff.set_jsons(resource_content, resource_content_2)
+        jsondiff.set_jsons(Utilities.read_file(resource_file_name), Utilities.read_file(resource_file_name2))
         
         updated_resources = jsondiff.compute_difference()
 
