@@ -1,4 +1,5 @@
 import nmap
+import dns.resolver
 
 class NmapScanner:
     
@@ -12,22 +13,34 @@ class NmapScanner:
     def perform_scans(self):
         scan_result = {}
         host_to_be_scanned = self.link
+        if (not self.is_host_up(host_to_be_scanned)):
+            return None
+
         ports = self.perform_TCP_port_scan(host_to_be_scanned)
         scan_result['ports'] = ports
 
         return (scan_result)
+    def is_host_up (self, host_to_scan):
+        try:
+            answers = dns.resolver.resolve(host_to_scan,'A')
+            answers = list(answers)
+            if (len(answers) > 0):
+                return True
+        except Exception as ex:
+            print(ex)
+            return False 
 
     def perform_TCP_port_scan(self, host_to_scan):
-        self.nm.scan(host_to_scan, '1-65535','-sV -sS -T4 -v')
+        self.nm.scan(host_to_scan) #'-sV -sS -T4 -v')  '1-65535',
         hosts = self.nm.all_hosts()
         results = {}
         for host in hosts:
             for proto in self.nm[host].all_protocols():
                 ports = self.nm[host][proto].keys()
                 for port in ports:
-                    openPortsState = self.nm[host][proto][port]['state']
-                    openPortServiceName = self.nm[host][proto][port]['name']
-                    results[port] = {'status' :[openPortsState, openPortServiceName]}
+                    open_port_state = self.nm[host][proto][port]['state']
+                    open_port_service_name = self.nm[host][proto][port]['name']
+                    results[port] = {'status' :[open_port_state, open_port_service_name]}
         return (results)
     
     def perform_OS_scan(self, host_to_scan):

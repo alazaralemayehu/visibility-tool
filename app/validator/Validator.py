@@ -1,4 +1,3 @@
-
 import argparse
 import json
 from deepdiff import DeepDiff
@@ -224,6 +223,9 @@ class Utilities:
     def read_file(file_name):
         f = open(file_name, "r")
         json_string = f.read()
+        if (json_string == ""):
+            json_string = "[]"
+
         json_objects = json.loads(json_string)
         return json_objects
 

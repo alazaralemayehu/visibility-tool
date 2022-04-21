@@ -1,11 +1,16 @@
 import json
+import logging
 import time
 import subprocess
+import boto3
+from botocore.exceptions import ClientError
+import os
 from NmapScanner import NmapScanner
 from SSLScanner import SSLScanner
+import boto3
 
 def main(event=None, context=None):
-    linksFile = open("links.txt", "r")
+    links_file = open("links.txt", "r")
     list_of_hosts = []
     
     # output file name that saves the json output
@@ -13,7 +18,7 @@ def main(event=None, context=None):
     output_file = open(file_name, "a")
     output_dictionary = {}
 
-    for line in linksFile.readlines():
+    for line in links_file.readlines():
         list_of_hosts.append(line.strip())
 
     print(subprocess.check_output([ "whoami"]))
@@ -21,10 +26,23 @@ def main(event=None, context=None):
     output_dictionary = scan_hosts(list_of_hosts)
     print(output_dictionary)
 
-    jsonResult = json.dumps(output_dictionary, indent=4)
+    json_result = json.dumps(output_dictionary, indent=4)
     # json.dump(output_dictionary, output_file)
-    output_file.write(jsonResult)
+    output_file.write(json_result)
     output_file.close()
+
+    response = upload_file(file_name, 'vulnscan-bucket')
+    print(response)
+
+def upload_file (file_name, bucket):
+
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.upload_file(file_name, bucket, file_name)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
 
 def scan_hosts(list_of_hosts):
     
@@ -40,6 +58,8 @@ def scan_hosts(list_of_hosts):
         nmap_scanner.set_link(host_to_be_scanned)
 
         scan_results = nmap_scanner.perform_scans()
+        if (scan_results is None):
+            continue
 
         for port in scan_results['ports']:
             ssl_scanner.set_port(port)

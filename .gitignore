@@ -2,4 +2,5 @@
 *.txt
 *.json
 *test.py
+.aws/*
 __pycache__
