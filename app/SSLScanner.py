@@ -126,6 +126,6 @@ class SSLScanner:
 
                 
         except (ValueError, IndexError):
-            print(" something is wrong")
+            print("The index does not exist. Something is wrong")
     
         return ssl_information
