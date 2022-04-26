@@ -2,6 +2,7 @@ import json
 from deepdiff import DeepDiff
 import boto3
 import boto3.session
+import subprocess
 from Validator import *
 def run_aws_lambda():
     f = open('config.txt', 'r')
@@ -13,6 +14,7 @@ def run_aws_lambda():
     lines = f.readlines()
     aws_access_key_id = lines[0].strip()
     aws_secret_acces_key = lines[1].strip()
+    print(subprocess.check_output([ "whoami"]))
 
     # conn = boto3.client()
     # conn = boto3.session.Session(
@@ -33,9 +35,9 @@ def run_aws_lambda():
     else:
         objects.sort(key=lambda object: object.last_modified, reverse=True)
         print(objects)
-        recent_uploaded_object = json.loads(objects[0].get()['Body'].read().decode('utf-8'))
+        recently_uploaded_object = json.loads(objects[0].get()['Body'].read().decode('utf-8'))
         previously_uploaded_object = json.loads(objects[1].get()['Body'].read().decode('utf-8'))
-        return recent_uploaded_object,previously_uploaded_object    
+        return recently_uploaded_object,previously_uploaded_object    
         
 def main(event, context):
 
@@ -51,18 +53,18 @@ def main(event, context):
         print("Something is wrong with Rule structure")
         return
 
-    recent_uploaded_object , previously_uploaded_object = run_aws_lambda()
+    recently_uploaded_object , previously_uploaded_object = run_aws_lambda()
 
-    if (recent_uploaded_object is None and previously_uploaded_object is None):
+    if (recently_uploaded_object is None and previously_uploaded_object is None):
             print("Please make sure the bucket is not empty or you have access to those files.")
             return
 
     updated_resources = None
-    resources_manager.set_resource(recent_uploaded_object)
+    resources_manager.set_resource(recently_uploaded_object)
 
-    if (previously_uploaded_object is not None and recent_uploaded_object is not None):
+    if (previously_uploaded_object is not None and recently_uploaded_object is not None):
         jsondiff = JsonDifference()
-        jsondiff.set_jsons(previously_uploaded_object, recent_uploaded_object)
+        jsondiff.set_jsons(previously_uploaded_object, recently_uploaded_object)
         
         updated_resources = jsondiff.compute_difference()
         print(updated_resources)
