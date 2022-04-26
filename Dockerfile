@@ -39,7 +39,12 @@ RUN pip3 install \
         deepdiff \
         boto3 \
         dnspython
+
 # setup aws authentication configuration 
+
+# if you are running this inside EC2 instance and you want the permission of EC2 to pass to the docker container
+# use docker run --net=host --rm image-name
+# else add .aws folder and uncomment the following two lines
 # RUN mkdir -p /root/.aws
 # COPY .aws /root/.aws
 
