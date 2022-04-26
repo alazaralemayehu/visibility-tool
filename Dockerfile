@@ -40,10 +40,10 @@ RUN pip3 install \
         boto3 \
         dnspython
 # setup aws authentication configuration 
-RUN mkdir -p /root/.aws
-COPY .aws /root/.aws
+# RUN mkdir -p /root/.aws
+# COPY .aws /root/.aws
 
 
-COPY app/* ${FUNCTION_DIR}
+COPY app/* ${FUNCTION_DIR}/
 
 CMD [ "python3", "main.py"]
