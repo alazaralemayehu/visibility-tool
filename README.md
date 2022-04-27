@@ -24,3 +24,6 @@ The second way to deploy this project is using docker. For the docker deployment
         [default]
         aws_access_key_id = aws access key id
         aws_secret_access_key = aws secret access key
+ 
+If you are planning to run it within EC2 instance, you can leave the .aws folder and comment out the Dockerfile where it copies the folder. When you run
+as docker container use docker run --rm image-name --net=host.
