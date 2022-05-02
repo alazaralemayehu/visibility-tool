@@ -17,66 +17,77 @@ def run_aws_lambda():
     print(subprocess.check_output([ "whoami"]))
 
     # conn = boto3.client()
-    # conn = boto3.session.Session(
-    #     aws_access_key_id= aws_access_key_id,
-    #     aws_secret_access_key= aws_secret_acces_key
-    # )
+    conn = boto3.session.Session(
+        aws_access_key_id= aws_access_key_id,
+        aws_secret_access_key= aws_secret_acces_key
+    )
 
-    s3 = boto3.resource('s3')
+    s3 = conn.resource('s3')
     # for bucket in s3.buckets.all()
-    bucket = s3.Bucket('vulnscanner-result')
+    bucket = s3.Bucket('test-vulscanner')
     objects =list(bucket.objects.all())
-    print("length of the S3 is")
-    print(len(objects))
     if (len(objects)== 0):
         return None, None
     elif (len(objects) == 1):
         return json.loads(objects[0].get()['Body'].read().decode('utf-8')), None
     else:
         objects.sort(key=lambda object: object.last_modified, reverse=True)
-        print(objects)
-        recently_uploaded_object = json.loads(objects[0].get()['Body'].read().decode('utf-8'))
-        previously_uploaded_object = json.loads(objects[1].get()['Body'].read().decode('utf-8'))
-        return recently_uploaded_object,previously_uploaded_object    
-        
+        recently_scan_json = json.loads(objects[0].get()['Body'].read().decode('utf-8'))
+        penultimate_scan_json = json.loads(objects[1].get()['Body'].read().decode('utf-8'))
+        return recently_scan_json,penultimate_scan_json    
+
+def format_output_to_codedx(issues):
+    formatted_issues = []
+    for issue in issues:
+        key = list((issue.keys()))[0]
+        for instance_issue in issue[key]:
+            new_format = {}
+            new_format['id'] = key
+            new_format['title'] = instance_issue
+            new_format['description'] = 'Description'
+            new_format['aws_account_id'] = 'aws_account_id'
+            new_format['tool'] = 'SSLScan' if 'SSL' in instance_issue else 'Nmap'
+
+            formatted_issues.append(new_format)
+    return formatted_issues
 def main(event, context):
 
     rule_manager = RuleManager()
     resources_manager = ResourceManager()
+    rule_engine = RuleEngine()
+    
+    get_only_current_state_the_resource = True
+    updated_resources = None
 
     rules_file_name = 'rules.json'
     rule_manager.set_rules_file(rules_file_name)
 
-    is_rule_structure_valid = rule_manager.validate_rule_structure()
-
-    if (not is_rule_structure_valid):
+    if (not rule_manager.validate_rule_structure()):
         print("Something is wrong with Rule structure")
         return
 
-    recently_uploaded_object , previously_uploaded_object = run_aws_lambda()
+    recently_scan_json , penultimate_json = run_aws_lambda()
 
-    if (recently_uploaded_object is None and previously_uploaded_object is None):
+    if (recently_scan_json is None and penultimate_json is None):
             print("Please make sure the bucket is not empty or you have access to those files.")
             return
 
-    updated_resources = None
-    resources_manager.set_resource(recently_uploaded_object)
+    resources_manager.set_resource(recently_scan_json)
 
-    if (previously_uploaded_object is not None and recently_uploaded_object is not None):
-        jsondiff = JsonDifference()
-        jsondiff.set_jsons(previously_uploaded_object, recently_uploaded_object)
-        
-        updated_resources = jsondiff.compute_difference()
-        print(updated_resources)
+    if not get_only_current_state_the_resource:
+        if (penultimate_json is not None and recently_scan_json is not None):
+            json_diff = JsonDifference()
+            json_diff.set_jsons(penultimate_json, recently_scan_json)
+            
+            updated_resources = json_diff.compute_difference()
 
     if updated_resources is None:
         resources_dict_list = resources_manager.get_resource_properties()
     else:
         resources_dict_list = updated_resources
          
-    rule_engine = RuleEngine()
     rule_engine.set_resources(resources_dict_list)
     rule_engine.set_rules(rule_manager.get_rules())
-
-    rule_engine.run_evaluator()
-
+    result = rule_engine.run_evaluator()
+    formatted_output_to_codedx = format_output_to_codedx(result)
+    return formatted_output_to_codedx

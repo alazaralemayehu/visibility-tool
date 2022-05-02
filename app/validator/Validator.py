@@ -146,7 +146,7 @@ class RuleEngine:
         self.rules = rules
 
     def run_evaluator(self):
-        issues = {}
+        issues = []
         for resource in self.resources:
             applied_rules = self.get_applied_rule(resource)
             final_rules = {}
@@ -175,10 +175,9 @@ class RuleEngine:
             
             issue = self.evaluate_resource(resource, final_rules)
             if issue:
-                issues[resource['id']] = issue
-        for key in issues:
-            print(key + "      ", end=" ")
-            print(issues[key])
+                issue_dict = {resource['id']: issue}
+                issues.append(issue_dict)
+        return issues
 
     def evaluate_resource (self, resource, applied_rules):
         if not resource: return False
