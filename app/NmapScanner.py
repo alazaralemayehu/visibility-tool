@@ -31,7 +31,8 @@ class NmapScanner:
             return False 
 
     def perform_TCP_port_scan(self, host_to_scan):
-        self.nm.scan(host_to_scan) #'-sV -sS -T4 -v')  '1-65535',
+        # self.nm.scan(host_to_scan) #'-sV -sS -T4 -v')  '1-65535',
+        self.nm.scan(host_to_scan, '1-65535','-sV -sS -T4 -v')
         hosts = self.nm.all_hosts()
         results = {}
         for host in hosts:
