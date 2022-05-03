@@ -15,6 +15,7 @@ RUN apt-get update && \
     make \
     cmake \
     unzip \
+    curl \
     libcurl4-openssl-dev\
     software-properties-common\
     iputils-ping \
@@ -30,7 +31,7 @@ RUN apt-get update && \
     make static && \
     mv /function/sslscan/sslscan /bin/ &&\
 # Setup aws client
-    apt-get install curl; curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&\
+    wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&\
     unzip awscliv2.zip && rm awscliv2.zip && \
     sudo ./aws/install
 # install python dependencies
