@@ -31,7 +31,7 @@ def main(event=None, context=None):
     output_file.write(json_result)
     output_file.close()
 
-    response = upload_file(file_name, 'vulnscan-bucket')
+    response = upload_file(file_name, '')
     print(response)
 
 def upload_file (file_name, bucket):
@@ -62,8 +62,10 @@ def scan_hosts(list_of_hosts):
             continue
 
         for port in scan_results['ports']:
-            ssl_scanner.set_port(port)
-            ssl_result = ssl_scanner.perform_scans()
+            ssl_result = {}
+            if (int(port) == 443):
+                ssl_scanner.set_port(port)
+                ssl_result = ssl_scanner.perform_scans()
             scan_results['ports'][port] = ssl_result
 
         output_dictionary = {"id": host_to_be_scanned}
