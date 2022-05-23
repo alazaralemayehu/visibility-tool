@@ -18,13 +18,13 @@ def run_aws_lambda():
 
     # conn = boto3.client()
     conn = boto3.session.Session(
-        aws_access_key_id= aws_access_key_id,
-        aws_secret_access_key= aws_secret_acces_key
+    #     aws_access_key_id= aws_access_key_id,
+    #     aws_secret_access_key= aws_secret_acces_key
     )
 
     s3 = conn.resource('s3')
     # for bucket in s3.buckets.all()
-    bucket = s3.Bucket('test-vulscanner')
+    bucket = s3.Bucket('test')
     objects =list(bucket.objects.all())
     if (len(objects)== 0):
         return None, None
@@ -38,6 +38,8 @@ def run_aws_lambda():
 
 def format_output_to_codedx(issues):
     formatted_issues = []
+    
+    current_issue = {}
     for issue in issues:
         key = list((issue.keys()))[0]
         for instance_issue in issue[key]:
@@ -47,9 +49,52 @@ def format_output_to_codedx(issues):
             new_format['description'] = 'Description'
             new_format['aws_account_id'] = 'aws_account_id'
             new_format['tool'] = 'SSLScan' if 'SSL' in instance_issue else 'Nmap'
-
+            new_format['severity'] = 'medium'
             formatted_issues.append(new_format)
+    print("Formatted secrete")
+    print(formatted_issues)
+    secret = get_secret()
+    
     return formatted_issues
+
+def get_secret():
+
+        
+    secret_name = "codedx/test/vulscanner"
+    region_name = "eu-west-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
+    # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    # We rethrow the exception by default.
+
+                 
+    region_name = "eu-west-1"
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+    get_secret_value_response = client.get_secret_value(SecretId = secret_name)
+    secret = json.loads(get_secret_value_response['SecretString'])['codedx']
+    print(secret)
+    
+    # invoke_response = lambda_client.invoke(FunctionName="vulscanner-validator-lambda", InvocationType='Event', Payload=json.dumps(msg))
+    # print(invoke_response)
+
+def send_result_to_codedx(issues):
+
+
+    pass
+
+
+
 def main(event, context):
 
     rule_manager = RuleManager()
@@ -90,4 +135,6 @@ def main(event, context):
     rule_engine.set_rules(rule_manager.get_rules())
     result = rule_engine.run_evaluator()
     formatted_output_to_codedx = format_output_to_codedx(result)
+
     return formatted_output_to_codedx
+

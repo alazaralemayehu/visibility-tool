@@ -183,25 +183,42 @@ class RuleEngine:
         if not resource: return False
 
         issues_found = []
+        # extract the property we are evaluating
         open_ports = resource['open_ports']
-        
-        for open_port in open_ports:
-            open_port = int(open_port)
-            
-            if (open_port not in applied_rules['open_ports']):
-                issues_found.append("Port "+ str(open_port) + " should not be open")
-
         enabled_ssl_versions = resource['enabled_ssl_version']
 
-        for ssl_version in enabled_ssl_versions:
-            if (ssl_version not in applied_rules['enabled_ssl_version']):
-                issues_found.append("SSL version " + ssl_version + " is deprecated")
+        issues_found.extend(self.evaluate_open_ports(open_ports, applied_rules))
+        issues_found.extend(self.evaluate_ssl_version(enabled_ssl_versions, applied_rules))
+        issues_found.extend(self.evaluate_port_pairs(open_ports, applied_rules))
+
+        # Write a function that takes necessary parameters and return a list number
+        # The function process and returns a list that will be integrated with issues_found list
+        return issues_found
+    
+    def evaluate_port_pairs(self, open_ports, applied_rules):
+        issues_found = []
 
         for port_pair in applied_rules['port_pairs']:
             if (port_pair[0] in open_ports and port_pair[1] in open_ports):
                 issues_found.append("Two insecure port are open " + port_pair)
         return issues_found
 
+    def evaluate_ssl_version(self, enabled_ssl_versions, applied_rules):
+        issues_found = []
+        for ssl_version in enabled_ssl_versions:
+            if (ssl_version not in applied_rules['enabled_ssl_version']):
+                issues_found.append("SSL version " + ssl_version + " is deprecated")
+        
+        return issues_found
+
+    def evaluate_open_ports(self, open_ports, applied_rules):
+        issues_found = []
+        for open_port in open_ports:
+            open_port = int(open_port)
+            if (open_port not in applied_rules['open_ports']):
+                issues_found.append("Port "+ str(open_port) + " should not be open")
+
+        return issues_found
 
     def get_applied_rule(self, resource:dict, rule=None):
         # filter(lambda rule: rule['id'] == resource['id'], self.resources['applied_rules'])
