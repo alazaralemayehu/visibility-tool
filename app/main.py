@@ -4,9 +4,8 @@ import time
 import subprocess
 import boto3
 from botocore.exceptions import ClientError
-import os
-from NmapScanner import NmapScanner
-from SSLScanner import SSLScanner
+from Scanners.NmapScanner import NmapScanner
+from Scanners.SSLScanner import SSLScanner
 import boto3
 
 def main(event=None, context=None):
@@ -31,7 +30,7 @@ def main(event=None, context=None):
     output_file.write(json_result)
     output_file.close()
 
-    response = upload_file(file_name, '')
+    response = upload_file(file_name, 'vulnscan-bucket')
     print(response)
 
 def upload_file (file_name, bucket):
@@ -45,10 +44,14 @@ def upload_file (file_name, bucket):
     return True
 
 def scan_hosts(list_of_hosts):
-    
+
+    # To add new scanners create a class with the moethod perform_scans()
+    # The perform_scans() method returns a dictionary file to be integrated with the result
+
     scan_output = []
     ssl_scanner = SSLScanner()
     nmap_scanner = NmapScanner()
+    # To add new scanner initialize the class here
 
     for host_to_be_scanned in list_of_hosts:
         print("scanning " + host_to_be_scanned)
@@ -56,20 +59,23 @@ def scan_hosts(list_of_hosts):
 
         ssl_scanner.set_link(host_to_be_scanned)
         nmap_scanner.set_link(host_to_be_scanned)
-
+       
         scan_results = nmap_scanner.perform_scans()
         if (scan_results is None):
             continue
 
         for port in scan_results['ports']:
-            ssl_result = {}
-            if (int(port) == 443):
-                ssl_scanner.set_port(port)
-                ssl_result = ssl_scanner.perform_scans()
+            ssl_scanner.set_port(port)
+            ssl_result = ssl_scanner.perform_scans()
             scan_results['ports'][port] = ssl_result
+        # Logic for newly added scanner
+        # put a result in a vaiable
 
         output_dictionary = {"id": host_to_be_scanned}
         output_dictionary.update(scan_results)
+        # add the new dictionary with the code linking code
+        # output_dictionary.update(new_scan_result)
+
         scan_output.append(output_dictionary)
     return scan_output
 main()

@@ -50,6 +50,6 @@ RUN pip3 install \
 # COPY .aws /root/.aws
 
 
-COPY app/* ${FUNCTION_DIR}/
+COPY app/ ${FUNCTION_DIR}/
 
 CMD [ "python3", "main.py"]
