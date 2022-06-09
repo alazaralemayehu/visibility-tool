@@ -4,8 +4,8 @@ import time
 import subprocess
 import boto3
 from botocore.exceptions import ClientError
-from Scanners.NmapScanner import NmapScanner
-from Scanners.SSLScanner import SSLScanner
+from scanners.NmapScanner import NmapScanner
+from scanners.SSLScanner import SSLScanner
 import boto3
 
 def main(event=None, context=None):
