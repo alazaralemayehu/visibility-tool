@@ -43,7 +43,7 @@ class RuleManager:
 # Validate the rules json structure to follow the above example structure
 
         if (self.rules == None and self.rules_file == None):
-            # both rules file and json file read from rules file does not exist
+            # both rules file and json file red from rules file does not exist
             print("Unable to find json file or json object to validate")
             self.is_valid_rule = False
             return False
@@ -105,11 +105,13 @@ class ResourceManager:
             resource_id= self.extract_id(index)
             resource_open_ports = self.extract_open_ports(index) 
             enabled_ssl_version = self.extract_enabled_ssl_version(resource_open_ports, index)
+            # Write a function that can extract the properties you want and append it to aggregated_result
             
             aggregated_result =  {
                 "id": resource_id,
                 "open_ports": resource_open_ports,
                 "enabled_ssl_version": enabled_ssl_version
+                # "new_property": new result from the previous function
             }
             self.aggregated_resource_list.append(aggregated_result)
 
@@ -195,6 +197,7 @@ class RuleEngine:
         # The function process and returns a list that will be integrated with issues_found list
         return issues_found
     
+    
     def evaluate_port_pairs(self, open_ports, applied_rules):
         issues_found = []
 
@@ -221,7 +224,6 @@ class RuleEngine:
         return issues_found
 
     def get_applied_rule(self, resource:dict, rule=None):
-        # filter(lambda rule: rule['id'] == resource['id'], self.resources['applied_rules'])
         
         if (rule == None and self.rules == None):
             print("Rules are requried")

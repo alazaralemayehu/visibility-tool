@@ -62,7 +62,7 @@ def format_output_to_codedx(issues):
             new_format["severity"] = "medium"
             current_issue[key].append(new_format)
         formatted_issues.append(current_issue)
-    print("Formatted secrete")
+    print("Formatted secret")
     print(formatted_issues)
     secret = get_secret()
     
@@ -71,7 +71,7 @@ def format_output_to_codedx(issues):
 def get_secret():
 
         
-    secret_name = "codedx/test/vulscanner"
+    secret_name = ""
     region_name = "eu-west-1"
 
     # Create a Secrets Manager client
@@ -102,7 +102,7 @@ def get_secret():
 
 
 def sendFileForAnalysis(project_id, report_xml):
-    codedx_url = "https://cvms.kone.com/codedx" 
+    codedx_url = "" 
     print("sending")
     report_xml.seek(0,0)
     # Can't use getHeader as Content-Type can't be *
@@ -124,7 +124,6 @@ def addToVulscannerXML(findings, row):
                                     })       
 def send_result_to_codedx(issues):
 
-    i = 430
     for issue in issues:
         report_xml = ET.Element("report", {"date": datetime.datetime.now().isoformat(),"tool": "vulscanner"})
         findings = ET.Element("findings")
@@ -136,7 +135,7 @@ def send_result_to_codedx(issues):
         cvms_xml = io.BytesIO()
         tree.write(cvms_xml, xml_declaration=True, encoding="utf-8", method="xml")
         sendFileForAnalysis(getProjectIdByName(key), cvms_xml) 
-        i = i + 1
+
         print("sent")
 def getHeader(apikey):
     return {
@@ -145,7 +144,7 @@ def getHeader(apikey):
             'Content-Type': '*/*'
         }
 def getProjectIdByName(repository):
-    codedx_url = "https://cvms.kone.com/codedx" 
+    codedx_url = "" 
 
     codedx_filter = "{\"filter\": { \"name\": \"" + repository + "\"}}"
     response = requests.post(codedx_url + "/api/projects/query", headers=getHeader(get_secret()), data=codedx_filter)
